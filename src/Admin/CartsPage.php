@@ -69,14 +69,8 @@ final class CartsPage implements HasHooks
             return;
         }
 
-        $status = isset($_GET['status']) ? sanitize_key(wp_unslash((string) $_GET['status'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-        $allowed = [AbandonedCart::STATUS_PENDING, AbandonedCart::STATUS_ABANDONED, AbandonedCart::STATUS_RECOVERED];
-        if (! in_array($status, $allowed, true)) {
-            $status = '';
-        }
-
         $counts = $this->repository->statusCounts();
-        $rows   = $this->repository->findRecent($status, 200);
+        $rows   = $this->repository->findRecent(200);
         $total  = $counts['abandoned'] + $counts['recovered'];
         $rate   = $total > 0 ? round(($counts['recovered'] / $total) * 100, 1) : 0.0;
         ?>
@@ -93,13 +87,6 @@ final class CartsPage implements HasHooks
                 <div class="recover-card"><span class="recover-card__num"><?php echo esc_html((string) $counts['recovered']); ?></span><span class="recover-card__label"><?php esc_html_e('Recovered', 'recover'); ?></span></div>
                 <div class="recover-card recover-card--accent"><span class="recover-card__num"><?php echo esc_html((string) $rate); ?>%</span><span class="recover-card__label"><?php esc_html_e('Recovery rate', 'recover'); ?></span></div>
             </div>
-
-            <ul class="subsubsub">
-                <li><a href="<?php echo esc_url(admin_url('admin.php?page=' . self::PAGE)); ?>" class="<?php echo $status === '' ? 'current' : ''; ?>"><?php esc_html_e('All', 'recover'); ?></a> |</li>
-                <li><a href="<?php echo esc_url(add_query_arg('status', 'abandoned', admin_url('admin.php?page=' . self::PAGE))); ?>" class="<?php echo $status === 'abandoned' ? 'current' : ''; ?>"><?php esc_html_e('Abandoned', 'recover'); ?></a> |</li>
-                <li><a href="<?php echo esc_url(add_query_arg('status', 'recovered', admin_url('admin.php?page=' . self::PAGE))); ?>" class="<?php echo $status === 'recovered' ? 'current' : ''; ?>"><?php esc_html_e('Recovered', 'recover'); ?></a> |</li>
-                <li><a href="<?php echo esc_url(add_query_arg('status', 'pending', admin_url('admin.php?page=' . self::PAGE))); ?>" class="<?php echo $status === 'pending' ? 'current' : ''; ?>"><?php esc_html_e('Pending', 'recover'); ?></a></li>
-            </ul>
 
             <?php if ($rows === []) : ?>
                 <p><?php esc_html_e('No carts recorded yet. Once shoppers add items and leave without checking out, they will appear here.', 'recover'); ?></p>

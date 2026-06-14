@@ -8,7 +8,8 @@ defined('ABSPATH') || exit;
 
 use Recover\Model\AbandonedCart;
 use Recover\Settings;
-use Recover\Util\TemplateLoader;
+
+use const Recover\PLUGIN_DIR;
 
 /**
  * Composes and sends a recovery email for a single abandoned cart via the site's
@@ -18,7 +19,6 @@ final class RecoveryMailer
 {
     public function __construct(
         private readonly Settings $settings,
-        private readonly TemplateLoader $templates,
     ) {
     }
 
@@ -31,34 +31,35 @@ final class RecoveryMailer
             return false;
         }
 
-        $restoreUrl = RestoreHandler::url($cart->token);
-
-        $subject = $this->settings->emailSubject();
-
-        $html = $this->templates->render('emails/recovery', [
+        $html = $this->render([
             'heading'     => $this->settings->emailHeading(),
             'body'        => $this->settings->emailBody(),
             'button'      => $this->settings->emailButton(),
-            'restore_url' => $restoreUrl,
-            'cart'        => $cart,
+            'restore_url' => RestoreHandler::url($cart->token),
             'site_name'   => get_bloginfo('name'),
         ]);
 
         $headers = ['Content-Type: text/html; charset=UTF-8'];
 
-        /**
-         * Filter the recovery email arguments before sending.
-         *
-         * @param array{to:string, subject:string, message:string, headers:list<string>} $args
-         * @param AbandonedCart                                                            $cart
-         */
-        $args = apply_filters('recover/email/args', [
-            'to'      => $cart->email,
-            'subject' => $subject,
-            'message' => $html,
-            'headers' => $headers,
-        ], $cart);
+        return (bool) wp_mail($cart->email, $this->settings->emailSubject(), $html, $headers);
+    }
 
-        return (bool) wp_mail($args['to'], $args['subject'], $args['message'], $args['headers']);
+    /**
+     * Render the bundled recovery email template to an HTML string.
+     *
+     * @param array<string, mixed> $args
+     */
+    private function render(array $args): string
+    {
+        $recover_heading     = (string) $args['heading'];
+        $recover_body        = (string) $args['body'];
+        $recover_button      = (string) $args['button'];
+        $recover_restore_url = (string) $args['restore_url'];
+        $recover_site_name   = (string) $args['site_name'];
+
+        ob_start();
+        include PLUGIN_DIR . '/templates/emails/recovery.php';
+
+        return (string) ob_get_clean();
     }
 }

@@ -90,9 +90,7 @@ final class SettingsPage implements HasHooks
         );
 
         $this->number('abandon_after', __('Mark abandoned after (minutes)', 'recover'), (string) $this->settings->abandonAfterMinutes(), __('Minutes of inactivity before a pending cart is flagged as abandoned.', 'recover'), self::SECTION_TIMING, 5);
-        $this->number('email_delay', __('First email delay (minutes)', 'recover'), (string) $this->settings->emailDelayMinutes(), __('Minutes to wait after abandonment before sending the first recovery email.', 'recover'), self::SECTION_TIMING, 0);
-        $this->number('max_emails', __('Recovery emails per cart', 'recover'), (string) $this->settings->maxEmails(), __('How many recovery emails to send for a single abandoned cart.', 'recover'), self::SECTION_TIMING, 1);
-        $this->number('resend_interval', __('Resend interval (minutes)', 'recover'), (string) $this->settings->resendIntervalMinutes(), __('Minimum minutes between recovery emails when sending more than one.', 'recover'), self::SECTION_TIMING, 60);
+        $this->number('email_delay', __('Email delay (minutes)', 'recover'), (string) $this->settings->emailDelayMinutes(), __('Minutes to wait after abandonment before sending the recovery email.', 'recover'), self::SECTION_TIMING, 0);
 
         // ── Email ────────────────────────────────────────────────────────────
         add_settings_section(
@@ -233,8 +231,6 @@ final class SettingsPage implements HasHooks
             'consent_label'   => sanitize_text_field((string) ($raw['consent_label'] ?? '')),
             'abandon_after'   => max(5, absint($raw['abandon_after'] ?? 60)),
             'email_delay'     => absint($raw['email_delay'] ?? 30),
-            'max_emails'      => max(1, absint($raw['max_emails'] ?? 1)),
-            'resend_interval' => max(60, absint($raw['resend_interval'] ?? 1440)),
             'email_subject'   => sanitize_text_field((string) ($raw['email_subject'] ?? '')),
             'email_heading'   => sanitize_text_field((string) ($raw['email_heading'] ?? '')),
             'email_body'      => sanitize_textarea_field((string) ($raw['email_body'] ?? '')),

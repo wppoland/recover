@@ -171,22 +171,20 @@ final class CartRepository
     }
 
     /**
-     * Abandoned carts due for a recovery email: one email already overdue and
-     * fewer than $maxEmails sent so far.
+     * Abandoned carts that have a contactable, consented email and have not yet
+     * been sent a recovery email.
      *
      * @return list<AbandonedCart>
      */
-    public function findDueForEmail(string $sendBeforeUtc, int $maxEmails, int $limit = 50): array
+    public function findDueForEmail(int $limit = 50): array
     {
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own custom plugin table, statement prepared with placeholders.
         $rows = $this->wpdb->get_results(
             $this->wpdb->prepare(
-                'SELECT * FROM %i WHERE status = %s AND emails_sent < %d AND consent = 1 AND email IS NOT NULL AND email <> %s AND (last_email_at IS NULL OR last_email_at <= %s) ORDER BY abandoned_at ASC LIMIT %d',
+                'SELECT * FROM %i WHERE status = %s AND emails_sent = 0 AND consent = 1 AND email IS NOT NULL AND email <> %s ORDER BY abandoned_at ASC LIMIT %d',
                 $this->tableName(),
                 AbandonedCart::STATUS_ABANDONED,
-                $maxEmails,
                 '',
-                $sendBeforeUtc,
                 $limit,
             ),
         );
@@ -224,19 +222,14 @@ final class CartRepository
 
     public function recordEmailSent(int $id): void
     {
-        $now   = current_time('mysql', true);
-        $table = $this->tableName();
-        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own custom plugin table, statement prepared with placeholders.
-        $this->wpdb->query(
-            $this->wpdb->prepare(
-                'UPDATE %i SET emails_sent = emails_sent + 1, last_email_at = %s, updated_at = %s WHERE id = %d',
-                $table,
-                $now,
-                $now,
-                $id,
-            ),
+        $now = current_time('mysql', true);
+        $this->wpdb->update(
+            $this->tableName(),
+            ['emails_sent' => 1, 'last_email_at' => $now, 'updated_at' => $now],
+            ['id' => $id],
+            ['%d', '%s', '%s'],
+            ['%d'],
         );
-        // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
     }
 
     /**
@@ -256,32 +249,17 @@ final class CartRepository
      *
      * @return list<AbandonedCart>
      */
-    public function findRecent(string $status = '', int $limit = 100): array
+    public function findRecent(int $limit = 100): array
     {
-        $table = $this->tableName();
-
-        if ($status !== '') {
-            // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own custom plugin table, statement prepared with placeholders.
-            $rows = $this->wpdb->get_results(
-                $this->wpdb->prepare(
-                    'SELECT * FROM %i WHERE status = %s ORDER BY updated_at DESC LIMIT %d',
-                    $table,
-                    $status,
-                    $limit,
-                ),
-            );
-            // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
-        } else {
-            // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own custom plugin table, statement prepared with placeholders.
-            $rows = $this->wpdb->get_results(
-                $this->wpdb->prepare(
-                    'SELECT * FROM %i ORDER BY updated_at DESC LIMIT %d',
-                    $table,
-                    $limit,
-                ),
-            );
-            // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
-        }
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own custom plugin table, statement prepared with placeholders.
+        $rows = $this->wpdb->get_results(
+            $this->wpdb->prepare(
+                'SELECT * FROM %i ORDER BY updated_at DESC LIMIT %d',
+                $this->tableName(),
+                $limit,
+            ),
+        );
+        // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
 
         return array_map(
             static fn (object $row): AbandonedCart => AbandonedCart::fromRow($row),

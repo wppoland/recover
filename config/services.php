@@ -18,7 +18,6 @@ use Recover\Service\CronWorker;
 use Recover\Service\RecoveryMailer;
 use Recover\Service\RestoreHandler;
 use Recover\Settings;
-use Recover\Util\TemplateLoader;
 
 defined('ABSPATH') || exit;
 
@@ -26,7 +25,6 @@ return static function (Container $c): void {
     // Infrastructure.
     $c->singleton(Migrator::class, static fn (): Migrator => new Migrator());
     $c->singleton(Settings::class, static fn (): Settings => new Settings());
-    $c->singleton(TemplateLoader::class, static fn (): TemplateLoader => new TemplateLoader());
     $c->singleton(CartRepository::class, static function (): CartRepository {
         global $wpdb;
         return new CartRepository($wpdb);
@@ -35,7 +33,6 @@ return static function (Container $c): void {
     // Services.
     $c->singleton(RecoveryMailer::class, static fn (Container $c): RecoveryMailer => new RecoveryMailer(
         $c->get(Settings::class),
-        $c->get(TemplateLoader::class),
     ));
     $c->singleton(CartTracker::class, static fn (Container $c): CartTracker => new CartTracker(
         $c->get(CartRepository::class),

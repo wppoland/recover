@@ -34,13 +34,11 @@ Recover captures WooCommerce carts that shoppers leave behind and emails them a 
 
 * Automatic cart snapshots whenever the cart changes
 * Early email capture for logged-in customers and (consent-gated) guests
-* Configurable abandonment window and first-email delay
+* Configurable abandonment window and email delay
 * Secure, tokenised one-click restore link that repopulates the cart
-* Recovery emails sent on a WordPress cron schedule via `wp_mail`
-* Configurable number of recovery emails per cart and resend interval
+* Recovery email sent on a WordPress cron schedule via `wp_mail`
 * Abandoned / recovered / pending cart list with a recovery-rate summary
-* Filter the cart list by status
-* Customisable email subject, heading, body and button text — overridable email template (`yourtheme/recover/emails/recovery.php`)
+* Customisable email subject, heading, body and button text
 * GDPR-friendly consent checkbox and one-click per-email data wipe
 * Compatible with WooCommerce HPOS (Custom Order Tables) and Cart/Checkout Blocks
 
@@ -60,8 +58,8 @@ Yes. Recover is free and licensed under the GPL.
 = Does Recover require WooCommerce? =
 Yes. Recover is a WooCommerce extension and requires WooCommerce 8.0 or later. It shows an admin notice and stays inactive if WooCommerce is missing or out of date.
 
-= How are recovery emails sent? =
-On a WordPress cron schedule (hourly by default). Each run marks carts that have been inactive past your window as abandoned, then emails a recovery link to any abandoned cart that is due, using your own site mailer (`wp_mail`). The worker is idempotent, so it never double-sends.
+= How is the recovery email sent? =
+On a WordPress cron schedule (hourly by default). Each run marks carts that have been inactive past your window as abandoned, then emails a recovery link to any abandoned cart that is due, using your own site mailer (`wp_mail`). The worker is idempotent, so it never double-sends — each cart receives a single recovery email.
 
 = Is the restore link safe? =
 Yes. Each cart has a 64-character cryptographically random token. The restore link contains only that token — no customer id, no email, nothing personal. Without the exact token a cart cannot be restored, so there is no enumeration or IDOR risk.

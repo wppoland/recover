@@ -2,16 +2,13 @@
 /**
  * Recovery email template (HTML).
  *
- * Override by copying to: yourtheme/recover/emails/recovery.php
- *
  * Available variables (all prefixed with recover_):
  *
- * @var string                          $recover_heading
- * @var string                          $recover_body
- * @var string                          $recover_button
- * @var string                          $recover_restore_url
- * @var \Recover\Model\AbandonedCart    $recover_cart
- * @var string                          $recover_site_name
+ * @var string $recover_heading
+ * @var string $recover_body
+ * @var string $recover_button
+ * @var string $recover_restore_url
+ * @var string $recover_site_name
  *
  * @package Recover
  */

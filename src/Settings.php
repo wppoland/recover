@@ -33,9 +33,7 @@ final class Settings
             'enabled'             => true,
             'capture_guests'      => true,
             'abandon_after'       => 60,   // Minutes of inactivity before a cart is "abandoned".
-            'email_delay'         => 30,   // Minutes after abandonment before the first email.
-            'max_emails'          => 1,    // Recovery emails per cart.
-            'resend_interval'     => 1440, // Minutes between recovery emails (for max_emails > 1).
+            'email_delay'         => 30,   // Minutes after abandonment before the recovery email.
             'require_consent'     => true,
             'consent_label'       => '',
             'email_subject'       => '',
@@ -75,16 +73,6 @@ final class Settings
     public function emailDelayMinutes(): int
     {
         return max(0, (int) $this->get('email_delay', 30));
-    }
-
-    public function maxEmails(): int
-    {
-        return max(1, (int) $this->get('max_emails', 1));
-    }
-
-    public function resendIntervalMinutes(): int
-    {
-        return max(60, (int) $this->get('resend_interval', 1440));
     }
 
     public function consentLabel(): string

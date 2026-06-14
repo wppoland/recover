@@ -15,11 +15,11 @@ use const Recover\CRON_HOOK;
 /**
  * wp-cron worker. Two idempotent passes per run:
  *   1. Sweep: mark pending carts inactive past the configured window as abandoned.
- *   2. Send: email recovery links for abandoned carts that are due, respecting
- *      the per-cart email cap and resend interval.
+ *   2. Send: email a recovery link for each abandoned cart that is due and has
+ *      not been emailed yet.
  *
  * Idempotency: a cart is only marked abandoned once (status transition), and
- * emails_sent / last_email_at gate re-sends so a re-run never double-sends.
+ * emails_sent gates the send so a re-run never double-sends.
  */
 final class CronWorker implements HasHooks
 {
@@ -62,19 +62,13 @@ final class CronWorker implements HasHooks
 
     private function sendDue(): void
     {
-        $maxEmails = $this->settings->maxEmails();
-
-        // First email is due once abandonment + email delay has elapsed; the
-        // resend interval gates any subsequent emails via last_email_at.
-        $sendBefore = $this->utcMinutesAgo($this->settings->resendIntervalMinutes());
-
-        $due = $this->repository->findDueForEmail($sendBefore, $maxEmails, 50);
+        $due = $this->repository->findDueForEmail(50);
 
         foreach ($due as $cart) {
-            // Honour the initial delay after abandonment for the first email.
-            if ($cart->emailsSent === 0 && $cart->abandonedAt !== null) {
-                $firstDueAt = $cart->abandonedAt->modify('+' . $this->settings->emailDelayMinutes() . ' minutes');
-                if ($firstDueAt > new \DateTimeImmutable('now', new \DateTimeZone('UTC'))) {
+            // Honour the delay after abandonment before sending the recovery email.
+            if ($cart->abandonedAt !== null) {
+                $dueAt = $cart->abandonedAt->modify('+' . $this->settings->emailDelayMinutes() . ' minutes');
+                if ($dueAt > new \DateTimeImmutable('now', new \DateTimeZone('UTC'))) {
                     continue;
                 }
             }
