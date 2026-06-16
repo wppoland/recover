@@ -77,7 +77,13 @@ final class SettingsPage implements HasHooks
         $this->checkbox('enabled', __('Enable cart recovery', 'recover'), __('Track abandoned carts and send recovery emails.', 'recover'), self::SECTION_GENERAL);
         $this->checkbox('capture_guests', __('Capture guest carts', 'recover'), __('Record carts and emails from visitors who are not logged in.', 'recover'), self::SECTION_GENERAL);
         $this->checkbox('require_consent', __('Require consent', 'recover'), __('Only store a guest email after they tick a consent checkbox at checkout (recommended for GDPR).', 'recover'), self::SECTION_GENERAL);
-        $this->text('consent_label', __('Consent checkbox label', 'recover'), $this->settings->consentLabel(), self::SECTION_GENERAL);
+        $this->text(
+            'consent_label',
+            __('Consent checkbox label', 'recover'),
+            __('Wording the shopper sees next to the consent checkbox at checkout. Applies only when "Require consent" is on.', 'recover'),
+            self::SECTION_GENERAL,
+            $this->settings->consentLabel(),
+        );
 
         // ── Timing ──────────────────────────────────────────────────────────
         add_settings_section(
@@ -97,15 +103,39 @@ final class SettingsPage implements HasHooks
             self::SECTION_EMAIL,
             __('Recovery email', 'recover'),
             static function (): void {
-                echo '<p>' . esc_html__('Customise the recovery email. Leave any field blank to use the built-in default. Emails are sent through your own site mailer; no data leaves your store.', 'recover') . '</p>';
+                echo '<p>' . esc_html__('Customise the recovery email. Leave any field blank to use the built-in default shown as the placeholder. Emails are sent through your own site mailer; no data leaves your store.', 'recover') . '</p>';
             },
             self::PAGE,
         );
 
-        $this->text('email_subject', __('Subject', 'recover'), $this->settings->emailSubject(), self::SECTION_EMAIL);
-        $this->text('email_heading', __('Heading', 'recover'), $this->settings->emailHeading(), self::SECTION_EMAIL);
-        $this->textarea('email_body', __('Body text', 'recover'), $this->settings->emailBody(), self::SECTION_EMAIL);
-        $this->text('email_button', __('Button label', 'recover'), $this->settings->emailButton(), self::SECTION_EMAIL);
+        $this->text(
+            'email_subject',
+            __('Subject', 'recover'),
+            __('Inbox subject line. Keep it short and specific so it survives a crowded inbox.', 'recover'),
+            self::SECTION_EMAIL,
+            $this->settings->emailSubject(),
+        );
+        $this->text(
+            'email_heading',
+            __('Heading', 'recover'),
+            __('The large heading at the top of the email body, above your message.', 'recover'),
+            self::SECTION_EMAIL,
+            $this->settings->emailHeading(),
+        );
+        $this->textarea(
+            'email_body',
+            __('Body text', 'recover'),
+            __('The message shown above the recovery button. Plain text only; write what nudges the shopper back.', 'recover'),
+            self::SECTION_EMAIL,
+            $this->settings->emailBody(),
+        );
+        $this->text(
+            'email_button',
+            __('Button label', 'recover'),
+            __('Text on the button that returns the shopper to their saved cart.', 'recover'),
+            self::SECTION_EMAIL,
+            $this->settings->emailButton(),
+        );
     }
 
     public function renderPage(): void
@@ -169,31 +199,33 @@ final class SettingsPage implements HasHooks
     }
 
     /**
-     * @param array{id:string, value:string, description?:string} $args
+     * @param array{id:string, value:string, description?:string, placeholder?:string} $args
      */
     public function renderText(array $args): void
     {
         $id = $args['id'];
         printf(
-            '<input type="text" id="%1$s" name="%2$s[%1$s]" value="%3$s" class="regular-text" />',
+            '<input type="text" id="%1$s" name="%2$s[%1$s]" value="%3$s" placeholder="%4$s" class="regular-text" />',
             esc_attr($id),
             esc_attr(Settings::OPTION),
             esc_attr($args['value']),
+            esc_attr($args['placeholder'] ?? ''),
         );
         $this->description($args['description'] ?? '');
     }
 
     /**
-     * @param array{id:string, value:string, description?:string} $args
+     * @param array{id:string, value:string, description?:string, placeholder?:string} $args
      */
     public function renderTextarea(array $args): void
     {
         $id = $args['id'];
         printf(
-            '<textarea id="%1$s" name="%2$s[%1$s]" class="large-text" rows="3">%3$s</textarea>',
+            '<textarea id="%1$s" name="%2$s[%1$s]" class="large-text" rows="3" placeholder="%4$s">%3$s</textarea>',
             esc_attr($id),
             esc_attr(Settings::OPTION),
             esc_textarea($args['value']),
+            esc_attr($args['placeholder'] ?? ''),
         );
         $this->description($args['description'] ?? '');
     }
@@ -250,20 +282,25 @@ final class SettingsPage implements HasHooks
         add_settings_field($id, $title, [$this, 'renderCheckbox'], self::PAGE, $section, ['id' => $id, 'label' => $label]);
     }
 
-    private function text(string $id, string $title, string $value, string $section): void
+    /**
+     * @param string $default The built-in default, shown as the field placeholder so
+     *                        the zero-config behaviour is visible without saving anything.
+     */
+    private function text(string $id, string $title, string $description, string $section, string $default = ''): void
     {
         $options = (array) get_option(Settings::OPTION, []);
         $current = isset($options[$id]) ? (string) $options[$id] : '';
-        add_settings_field($id, $title, [$this, 'renderText'], self::PAGE, $section, ['id' => $id, 'value' => $current]);
-        unset($value);
+        add_settings_field($id, $title, [$this, 'renderText'], self::PAGE, $section, ['id' => $id, 'value' => $current, 'description' => $description, 'placeholder' => $default]);
     }
 
-    private function textarea(string $id, string $title, string $value, string $section): void
+    /**
+     * @param string $default The built-in default, shown as the field placeholder.
+     */
+    private function textarea(string $id, string $title, string $description, string $section, string $default = ''): void
     {
         $options = (array) get_option(Settings::OPTION, []);
         $current = isset($options[$id]) ? (string) $options[$id] : '';
-        add_settings_field($id, $title, [$this, 'renderTextarea'], self::PAGE, $section, ['id' => $id, 'value' => $current]);
-        unset($value);
+        add_settings_field($id, $title, [$this, 'renderTextarea'], self::PAGE, $section, ['id' => $id, 'value' => $current, 'description' => $description, 'placeholder' => $default]);
     }
 
     private function number(string $id, string $title, string $value, string $description, string $section, int $min): void

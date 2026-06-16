@@ -3,7 +3,10 @@
  * no layout shift, motion guarded by prefers-reduced-motion.
  */
 .recover-wrap {
-	--recover-accent: #2563eb;
+	/* Ember accent — the family hue from Recover's recovery email (the lit-window
+	   world), not transactional blue. #a3360b on white = 6.80:1, on the wp-admin
+	   grey #f0f0f1 = 5.97:1 — both pass WCAG AA for text and UI. */
+	--recover-accent: #a3360b;
 	--recover-surface: #ffffff;
 	--recover-border: #e3e6ea;
 	--recover-text: #1f2329;
@@ -15,6 +18,9 @@
 
 @media (prefers-color-scheme: dark) {
 	.recover-wrap {
+		/* Lighter ember so it stays legible on a dark surface: #fb923c on
+		   #1e1f22 = 7.28:1. */
+		--recover-accent: #fb923c;
 		--recover-surface: #1e1f22;
 		--recover-border: #34373c;
 		--recover-text: #e6e7e9;
@@ -25,6 +31,15 @@
 .recover-cron-status {
 	color: var(--recover-muted);
 	font-size: 13px;
+}
+
+/* Section headings: a small ember rule before each h2 ties the screen to the
+   rest of the family without shouting. Restraint over flourish. */
+.recover-wrap .form-table + h2,
+.recover-wrap h2 {
+	padding-left: 12px;
+	border-left: 3px solid var(--recover-accent);
+	line-height: 1.3;
 }
 
 .recover-cards {
