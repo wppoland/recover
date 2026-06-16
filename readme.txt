@@ -12,7 +12,9 @@ Recover abandoned WooCommerce carts: capture the email early, save the cart, ema
 
 == Description ==
 
-Recover captures WooCommerce carts that shoppers leave behind and emails them a secure, one-click link that puts every item straight back into their cart so they can finish checking out. It runs entirely on your own site — no third-party service, no data leaves your store.
+Recover captures WooCommerce carts that shoppers leave behind and emails them a secure, one-click link that puts every item straight back into their cart so they can finish checking out. It runs entirely on your own site: no third-party service, no data leaves your store.
+
+Because everything happens on your own server, you can read exactly what it does. The full source lives at https://github.com/wppoland/recover, which is also where to file a bug or request a feature.
 
 **How it works**
 
@@ -22,13 +24,13 @@ Recover captures WooCommerce carts that shoppers leave behind and emails them a 
 4. On the next scheduled run, Recover emails a recovery message containing a secure, tokenised restore link.
 5. One click on that link repopulates the cart and sends the shopper back to checkout. Recovered carts are tracked separately so you can see your recovery rate.
 
-**Why Recover?**
+**A few things worth knowing**
 
-* **Self-hosted.** Emails are sent through your own WordPress mailer (`wp_mail`). Cart data lives in a single custom table in your own database. Nothing is sent to any external service.
-* **Privacy-minded.** Guest email capture is gated behind an explicit consent checkbox (configurable). Restore links are unguessable 64-character random tokens — no customer ids in the URL, no personal data leakage. A one-click data-wipe erases every stored cart for a given email address.
-* **Secure by design.** All output is escaped, all input sanitised, every admin form and AJAX call is nonce-protected, and admin pages require the `manage_woocommerce` capability.
-* **Lightweight.** A tiny vanilla-JavaScript snippet (no jQuery) handles early email capture on checkout, loaded deferred. The recovery worker runs on WordPress cron and is fully idempotent — re-runs never double-send.
-* **Clean install.** One custom `{prefix}_recover_carts` table, version-tracked. Deleting the plugin drops the table, removes its options, and clears the scheduled task.
+Emails go out through your own WordPress mailer (`wp_mail`), and cart data lives in a single custom table (`{prefix}_recover_carts`) in your database. Nothing is sent to an external service.
+
+Guest email capture only happens after the shopper ticks a consent checkbox, and you can edit the wording or turn the requirement off. Restore links carry an unguessable 64-character random token and nothing else: no customer id, no email in the URL. From the carts screen you can wipe every stored cart for a single email address in one click.
+
+On the implementation side, all output is escaped and all input sanitised, every admin form and AJAX request is nonce-checked, and the admin pages need the `manage_woocommerce` capability. Early email capture uses a small vanilla-JavaScript snippet (no jQuery) loaded in the footer; the recovery worker runs on WordPress cron and is idempotent, so a re-run never sends a second email for the same cart. Deleting the plugin drops its table, removes its two options, and clears the scheduled task.
 
 **Features**
 
