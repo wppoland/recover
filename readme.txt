@@ -82,8 +82,7 @@ Recover does not connect to any external services. Recovery emails are sent thro
 == Screenshots ==
 
 1. Abandoned cart list with pending / abandoned / recovered counts and recovery rate.
-2. Settings page — timing, consent, and recovery email customisation.
-3. The recovery email with its one-click "Complete my order" button.
+2. The recovery email with its one-click "Complete my order" button.
 
 == Changelog ==
 
