@@ -1,5 +1,5 @@
 === Recover - Abandoned Cart Recovery for WooCommerce ===
-Contributors: wppoland
+Contributors: motylanogha
 Tags: woocommerce, abandoned cart, cart recovery, email, ecommerce
 Requires at least: 6.5
 Tested up to: 7.0
