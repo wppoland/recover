@@ -24,24 +24,38 @@ final class RecoveryMailer
 
     /**
      * Send the recovery email. Returns true on a successful hand-off to wp_mail.
+     *
+     * @param int $step Zero-based index of the email in the recovery sequence.
      */
-    public function send(AbandonedCart $cart): bool
+    public function send(AbandonedCart $cart, int $step = 0): bool
     {
         if ($cart->email === null || ! is_email($cart->email)) {
             return false;
         }
 
-        $html = $this->render([
+        $templateArgs = [
+            'subject'     => $this->settings->emailSubject(),
             'heading'     => $this->settings->emailHeading(),
             'body'        => $this->settings->emailBody(),
             'button'      => $this->settings->emailButton(),
             'restore_url' => RestoreHandler::url($cart->token),
             'site_name'   => get_bloginfo('name'),
-        ]);
+        ];
+
+        /**
+         * Filters the template variables used to render the recovery email.
+         *
+         * @param array{subject:string, heading:string, body:string, button:string, restore_url:string, site_name:string} $templateArgs
+         * @param AbandonedCart                                                                                              $cart
+         * @param int                                                                                                        $step Zero-based sequence index.
+         */
+        $templateArgs = apply_filters('recover/email/template_args', $templateArgs, $cart, $step);
+
+        $html = $this->render($templateArgs);
 
         $args = [
             'to'      => $cart->email,
-            'subject' => $this->settings->emailSubject(),
+            'subject' => (string) $templateArgs['subject'],
             'message' => $html,
             'headers' => ['Content-Type: text/html; charset=UTF-8'],
         ];
@@ -54,8 +68,9 @@ final class RecoveryMailer
          *
          * @param array{to:string, subject:string, message:string, headers:list<string>} $args  Mail arguments.
          * @param AbandonedCart                                                           $cart  The cart being recovered.
+         * @param int                                                                     $step  Zero-based sequence index.
          */
-        $args = apply_filters('recover/email/args', $args, $cart);
+        $args = apply_filters('recover/email/args', $args, $cart, $step);
 
         return (bool) wp_mail(
             (string) $args['to'],

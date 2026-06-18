@@ -171,19 +171,22 @@ final class CartRepository
     }
 
     /**
-     * Abandoned carts that have a contactable, consented email and have not yet
-     * been sent a recovery email.
+     * Abandoned carts that have a contactable, consented email and still have
+     * recovery emails left in the configured sequence.
      *
      * @return list<AbandonedCart>
      */
-    public function findDueForEmail(int $limit = 50): array
+    public function findDueForEmail(int $limit = 50, int $maxEmails = 1): array
     {
+        $maxEmails = max(1, $maxEmails);
+
         // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own custom plugin table, statement prepared with placeholders.
         $rows = $this->wpdb->get_results(
             $this->wpdb->prepare(
-                'SELECT * FROM %i WHERE status = %s AND emails_sent = 0 AND consent = 1 AND email IS NOT NULL AND email <> %s ORDER BY abandoned_at ASC LIMIT %d',
+                'SELECT * FROM %i WHERE status = %s AND emails_sent < %d AND consent = 1 AND email IS NOT NULL AND email <> %s ORDER BY abandoned_at ASC LIMIT %d',
                 $this->tableName(),
                 AbandonedCart::STATUS_ABANDONED,
+                $maxEmails,
                 '',
                 $limit,
             ),
@@ -223,13 +226,18 @@ final class CartRepository
     public function recordEmailSent(int $id): void
     {
         $now = current_time('mysql', true);
-        $this->wpdb->update(
-            $this->tableName(),
-            ['emails_sent' => 1, 'last_email_at' => $now, 'updated_at' => $now],
-            ['id' => $id],
-            ['%d', '%s', '%s'],
-            ['%d'],
+
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own custom plugin table, atomic increment.
+        $this->wpdb->query(
+            $this->wpdb->prepare(
+                'UPDATE %i SET emails_sent = emails_sent + 1, last_email_at = %s, updated_at = %s WHERE id = %d',
+                $this->tableName(),
+                $now,
+                $now,
+                $id,
+            ),
         );
+        // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
     }
 
     /**

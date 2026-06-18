@@ -7,6 +7,7 @@ namespace Recover\Service;
 defined('ABSPATH') || exit;
 
 use Recover\Contract\HasHooks;
+use Recover\Model\AbandonedCart;
 use Recover\Repository\CartRepository;
 use Recover\Settings;
 
@@ -62,21 +63,43 @@ final class CronWorker implements HasHooks
 
     private function sendDue(): void
     {
-        $due = $this->repository->findDueForEmail(50);
+        $maxEmails = max(1, (int) apply_filters('recover/max_emails', 1));
+        $due       = $this->repository->findDueForEmail(50, $maxEmails);
 
         foreach ($due as $cart) {
-            // Honour the delay after abandonment before sending the recovery email.
-            if ($cart->abandonedAt !== null) {
-                $dueAt = $cart->abandonedAt->modify('+' . $this->settings->emailDelayMinutes() . ' minutes');
-                if ($dueAt > new \DateTimeImmutable('now', new \DateTimeZone('UTC'))) {
-                    continue;
-                }
+            $step = $cart->emailsSent;
+
+            if (! $this->isStepDue($cart, $step)) {
+                continue;
             }
 
-            if ($this->mailer->send($cart)) {
+            if ($this->mailer->send($cart, $step)) {
                 $this->repository->recordEmailSent($cart->id);
             }
         }
+    }
+
+    private function isStepDue(AbandonedCart $cart, int $step): bool
+    {
+        $delay = (int) apply_filters(
+            'recover/email_step_delay',
+            $this->settings->emailDelayMinutes(),
+            $cart,
+            $step,
+        );
+        $delay = max(0, $delay);
+
+        $anchor = ($step === 0 || $cart->lastEmailAt === null)
+            ? $cart->abandonedAt
+            : $cart->lastEmailAt;
+
+        if ($anchor === null) {
+            return false;
+        }
+
+        $dueAt = $anchor->modify('+' . $delay . ' minutes');
+
+        return $dueAt <= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
     }
 
     private function utcMinutesAgo(int $minutes): string
