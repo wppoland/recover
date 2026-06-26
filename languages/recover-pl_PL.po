@@ -334,7 +334,7 @@ msgid "Complete my order"
 msgstr "Dokończ zamówienie"
 
 #: templates/emails/recovery.php:76
-msgid "We left the light on — your cart is still here."
+msgid "We left the light on, your cart is still here."
 msgstr ""
 
 #: templates/emails/recovery.php:90

@@ -73,7 +73,7 @@ defined('ABSPATH') || exit;
                                             </tr>
                                         </table>
                                         <p style="margin:0 0 16px;font-size:13px;line-height:1.5;color:#9a3412;font-weight:600;letter-spacing:0.01em;">
-                                            <?php echo esc_html__('We left the light on — your cart is still here.', 'recover'); ?>
+                                            <?php echo esc_html__('We left the light on, your cart is still here.', 'recover'); ?>
                                         </p>
                                         <a href="<?php echo esc_url($recover_restore_url); ?>"
                                            style="display:inline-block;background-color:#a3360b;background-image:linear-gradient(180deg, #c44510 0%, #a3360b 100%);color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;padding:15px 32px;border-radius:10px;box-shadow:0 6px 16px rgba(163,54,11,0.32);">
