@@ -69,8 +69,11 @@ final class CartsPage implements HasHooks
             return;
         }
 
+        $search = isset($_GET['s']) ? sanitize_text_field(wp_unslash((string) $_GET['s'])) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only GET filter, no state change.
         $counts = $this->repository->statusCounts();
-        $rows   = $this->repository->findRecent(200);
+        $rows   = '' !== $search
+            ? $this->repository->searchByEmail($search, 200)
+            : $this->repository->findRecent(200);
         $total  = $counts['abandoned'] + $counts['recovered'];
         $rate   = $total > 0 ? round(($counts['recovered'] / $total) * 100, 1) : 0.0;
         ?>
@@ -88,7 +91,27 @@ final class CartsPage implements HasHooks
                 <div class="recover-card recover-card--accent"><span class="recover-card__num"><?php echo esc_html((string) $rate); ?>%</span><span class="recover-card__label"><?php esc_html_e('Recovery rate', 'recover'); ?></span></div>
             </div>
 
-            <?php if ($rows === []) : ?>
+            <form method="get" class="recover-carts__search" style="margin:12px 0;">
+                <input type="hidden" name="page" value="<?php echo esc_attr(self::PAGE); ?>" />
+                <label class="screen-reader-text" for="recover-cart-search"><?php esc_html_e('Search carts by email', 'recover'); ?></label>
+                <input type="search" id="recover-cart-search" name="s" value="<?php echo esc_attr($search); ?>" placeholder="<?php esc_attr_e('Search by email', 'recover'); ?>" />
+                <button type="submit" class="button"><?php esc_html_e('Search', 'recover'); ?></button>
+                <?php if ('' !== $search) : ?>
+                    <a href="<?php echo esc_url(admin_url('admin.php?page=' . self::PAGE)); ?>" class="button-link"><?php esc_html_e('Clear', 'recover'); ?></a>
+                <?php endif; ?>
+            </form>
+
+            <?php if ($rows === [] && '' !== $search) : ?>
+                <p>
+                    <?php
+                    printf(
+                        /* translators: %s: search term. */
+                        esc_html__('No carts match "%s".', 'recover'),
+                        esc_html($search),
+                    );
+                    ?>
+                </p>
+            <?php elseif ($rows === []) : ?>
                 <p><?php esc_html_e('No carts recorded yet. Once shoppers add items and leave without checking out, they will appear here.', 'recover'); ?></p>
             <?php else : ?>
                 <table class="wp-list-table widefat fixed striped">

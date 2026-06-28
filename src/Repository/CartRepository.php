@@ -306,6 +306,34 @@ final class CartRepository
     }
 
     /**
+     * Carts whose email matches the search term, newest first.
+     *
+     * Used by the admin carts list page only.
+     *
+     * @return list<AbandonedCart>
+     */
+    public function searchByEmail(string $term, int $limit = 200): array
+    {
+        $like = '%' . $this->wpdb->esc_like($term) . '%';
+
+        // phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter -- Own custom plugin table, statement prepared with placeholders.
+        $rows = $this->wpdb->get_results(
+            $this->wpdb->prepare(
+                'SELECT * FROM %i WHERE email LIKE %s ORDER BY updated_at DESC LIMIT %d',
+                $this->tableName(),
+                $like,
+                $limit,
+            ),
+        );
+        // phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared,PluginCheck.Security.DirectDB.UnescapedDBParameter
+
+        return array_map(
+            static fn (object $row): AbandonedCart => AbandonedCart::fromRow($row),
+            is_array($rows) ? $rows : [],
+        );
+    }
+
+    /**
      * Aggregate counts per status for the dashboard summary.
      *
      * @return array{pending:int, abandoned:int, recovered:int}
